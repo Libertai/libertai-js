@@ -12,19 +12,21 @@ export interface Embedding {
   vector: number[];
 }
 
+export interface PartialEmbeddingWithDistance {
+  content: string;
+  vector: number[];
+  distance: number;
+}
+
+export interface SearchResult {
+  query: string;
+  vector: number[];
+  matches: PartialEmbeddingWithDistance[];
+}
+
 export type Config = {
   embeddingApiUrl: string;
 
   knowledgeDbStoreName: string;
   knowledgeDbDocumentsKey: string;
 };
-
-export interface KnowledgeDb {
-  cfg: Config;
-
-  /* State Management */
-
-  load(): Promise<void>;
-  save(): Promise<void>;
-  clear(): Promise<void>;
-}

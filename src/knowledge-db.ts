@@ -1,6 +1,12 @@
 import { distance } from 'ml-distance';
 
-import { Document, Embedding, Config } from './types';
+import {
+  Document,
+  Embedding,
+  SearchResult,
+  Config,
+  PartialEmbeddingWithDistance,
+} from './types';
 import { defaultConfig } from './config';
 import idb from './idb';
 import { chunkText, embed, createDocument, createEmbedding } from './utils';
@@ -20,9 +26,14 @@ export class KnowledgeDb {
 
     // Initialize the localforage store
     this.store = idb.createStore(this.config.knowledgeDbStoreName);
+
+    this.load = this.load.bind(this);
+    this.addDocument = this.addDocument.bind(this);
+    this.searchDocuments = this.searchDocuments.bind(this);
+    this.save = this.save.bind(this);
   }
 
-  async load() {
+  async load(): Promise<Document[]> {
     // Load the documents from localforage
     const item = await idb.get<Document[]>(
       this.config.knowledgeDbDocumentsKey,
@@ -38,7 +49,11 @@ export class KnowledgeDb {
     return this.documents;
   }
 
-  async addDocument(this: KnowledgeDb, title: string, content: string) {
+  async addDocument(
+    this: KnowledgeDb,
+    title: string,
+    content: string
+  ): Promise<Document> {
     console.log('KnowledgeDB::addDocument');
 
     // Create a new document object
@@ -51,24 +66,7 @@ export class KnowledgeDb {
     //  these embeddings, but for now we'll just do it in series
     const promises = [];
     for (const chunk of chunks) {
-      promises.push(
-        (async function () {
-          // Generate a new embedding for each chunk
-          //@ts-ignore
-          const embedding = createEmbedding(
-            document.id,
-            chunk,
-            //@ts-ignore
-            await embed(chunk, this.config.embeddingApiUrl)
-          );
-
-          // Save the embedding to localforage
-          //@ts-ignore
-          await idb.put<Embedding>(embedding.id, embedding, this.store);
-
-          return;
-        })()
-      );
+      promises.push(this.embedChunk(document.id, chunk));
     }
     await Promise.all(promises);
     console.log('KnowledgeDB::addDocument - Embeddings Added');
@@ -81,15 +79,14 @@ export class KnowledgeDb {
     return document;
   }
 
-  // TODO: min distance
-  async searchDocuments(query: string, k = 5) {
+  async searchDocuments(query: string, k = 5): Promise<SearchResult> {
     console.log('KnowledgeDB::searchDocuments');
     const query_vector = await embed(query, this.config.embeddingApiUrl);
     const res = {
       query,
       vector: query_vector,
-      matches: [] as any[],
-    };
+      matches: [] as PartialEmbeddingWithDistance[],
+    } as SearchResult;
     let farthest = Number.MAX_VALUE;
     let farthest_index = -1;
     // Iterate over all embeddings
@@ -107,7 +104,8 @@ export class KnowledgeDb {
       // If we have less than k matches, add this one
       if (res.matches.length < k) {
         res.matches.push({
-          ...embedding,
+          content: embedding.content,
+          vector: embedding.vector,
           distance: euclidean_distance,
         });
         // Make sure we keep track of the farthest match, if it is indeed the farthest
@@ -120,7 +118,8 @@ export class KnowledgeDb {
       else if (euclidean_distance < farthest) {
         // Replace the farthest match
         res.matches[farthest_index] = {
-          ...embedding,
+          content: embedding.content,
+          vector: embedding.vector,
           distance: euclidean_distance,
         };
         // Naively find the new farthest match
@@ -138,7 +137,7 @@ export class KnowledgeDb {
 
   /* State utils */
 
-  async save() {
+  async save(): Promise<void> {
     // Save the documents to localforage
     await idb.put(
       this.config.knowledgeDbDocumentsKey,
@@ -146,6 +145,26 @@ export class KnowledgeDb {
       this.store
     );
   }
+
+  /* Private Arrow Functions */
+
+  private embedChunk = async (
+    document_id: string,
+    chunk: string
+  ): Promise<void> => {
+    const apiUrl = this.config.embeddingApiUrl;
+    // Generate a new embedding for each chunk
+    const embedding = createEmbedding(
+      document_id,
+      chunk,
+      await embed(chunk, apiUrl)
+    );
+
+    // Save the embedding to localforage
+    await idb.put<Embedding>(embedding.id, embedding, this.store);
+
+    return;
+  };
 }
 
 /* Utils */

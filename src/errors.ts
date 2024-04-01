@@ -1,5 +1,3 @@
-import { Document, Embedding } from './types';
-
 export const FailedEmbedding = new Error('Failed to embed the document');
 export const NotEmbedding = new Error('Malformed embedding');
 

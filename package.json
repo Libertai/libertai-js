@@ -48,15 +48,15 @@
     "prepare": "yarn build"
   },
   "devDependencies": {
-    "@types/node": "^16.9.1",
-    "@typescript-eslint/eslint-plugin": "^4.31.0",
-    "@typescript-eslint/parser": "^4.31.0",
-    "esbuild": "^0.12.27",
-    "eslint": "^7.32.0",
+    "@types/node": "^20.12.2",
+    "@typescript-eslint/eslint-plugin": "^7.4.0",
+    "@typescript-eslint/parser": "^7.4.0",
+    "esbuild": "^0.20.2",
+    "eslint": "^8.57.0",
     "prettier": "^3.0.0",
-    "rimraf": "^3.0.2",
+    "rimraf": "^5.0.5",
     "ts-node": "^10.2.1",
-    "typescript": "^4.4.2"
+    "typescript": "^5.4.3"
   },
   "dependencies": {
     "axios": "^1.6.8",

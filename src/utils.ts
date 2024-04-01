@@ -2,7 +2,6 @@ import axios from 'axios';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import { v4 as uuidv4 } from 'uuid';
 
-import errors from './errors';
 import { Document, Embedding } from './types';
 
 /*
