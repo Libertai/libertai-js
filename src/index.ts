@@ -1,5 +1,1 @@
-import { KnowledgeDb } from './knowledge-db.js';
-
-export default {
-  KnowledgeDb,
-};
+export { KnowledgeDb } from './knowledge-db.js';
