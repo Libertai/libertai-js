@@ -1,2 +1,2 @@
-export { KnowledgeDb } from './knowledge-db';
+export { KnowledgeStore } from './knowledge-store';
 export { LlamaCppApiEngine } from './inference';

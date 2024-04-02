@@ -1,4 +1,4 @@
-/* KnowledgeDb types */
+/* Knowledge types */
 
 // For now, just don't worry about the content of the document
 //  That will be chunked across multiple embeddings
@@ -26,13 +26,6 @@ export interface SearchResult {
   matches: PartialEmbeddingWithDistance[];
 }
 
-export type KnowledgeDbConfig = {
-  embeddingApiUrl: string;
-
-  knowledgeDbStoreName: string;
-  knowledgeDbDocumentsKey: string;
-};
-
 /* Chat Interface types */
 
 // TODO: this might be better placed at a higher level, but for now it's here
@@ -58,6 +51,11 @@ export interface Message {
   role: string;
   // Message content
   content: string;
+}
+
+export interface PartialChat {
+  id: string;
+  title: string;
 }
 
 /* Inference types */
@@ -116,3 +114,19 @@ export interface Model {
   chatMl: ChatMl;
   persona: Persona;
 }
+
+/* Store Configuration types */
+
+export type KnowledgeStoreConfig = {
+  // Embedding API endpoint to use
+  embeddingApiUrl: string;
+  // Name of the local store to use
+  storeName: string;
+  // Special key that identifies docuements metadata in the store
+  documentsKey: string;
+};
+
+export type ChatStoreConfig = {
+  // Name of the local store to use
+  storeName: string;
+};
