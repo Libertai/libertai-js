@@ -61,6 +61,7 @@
   "dependencies": {
     "axios": "^1.6.8",
     "langchain": "^0.1.30",
+    "langsmith": "^0.1.14",
     "localforage": "^1.10.0",
     "ml-distance": "^4.0.1",
     "uuid": "^9.0.1"
