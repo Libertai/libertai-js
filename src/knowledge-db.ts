@@ -79,7 +79,11 @@ export class KnowledgeDb {
     return document;
   }
 
-  async searchDocuments(query: string, k = 5): Promise<SearchResult> {
+  async searchDocuments(
+    query: string,
+    k = 5,
+    max_distance = 15
+  ): Promise<SearchResult> {
     console.log('KnowledgeDB::searchDocuments');
     const query_vector = await embed(query, this.config.embeddingApiUrl);
     const res = {
@@ -101,6 +105,10 @@ export class KnowledgeDb {
         query_vector,
         embedding.vector
       );
+
+      // If the distance is greater than the max_distance, skip it
+      if (euclidean_distance > max_distance) return;
+
       // If we have less than k matches, add this one
       if (res.matches.length < k) {
         res.matches.push({
