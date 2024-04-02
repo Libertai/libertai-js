@@ -3,15 +3,15 @@ import {
   DEFAULT_DOCUMENTS_STORE_KEY,
   DEFAULT_KNOWLEDGE_DB_STORE_NAME,
 } from './constants.js';
-import { Config } from './types.js';
+import { KnowledgeDbConfig } from './types.js';
 
-export const defaultConfig = {
+export const defaultKnowledgeDbConfig: KnowledgeDbConfig = {
   embeddingApiUrl: DEFAULT_EMBEDDING_API_URL,
 
   knowledgeDbStoreName: DEFAULT_KNOWLEDGE_DB_STORE_NAME,
   knowledgeDbDocumentsKey: DEFAULT_DOCUMENTS_STORE_KEY,
-} as Config;
+} as KnowledgeDbConfig;
 
 export default {
-  defaultConfig,
+  defaultKnowledgeDbConfig,
 };

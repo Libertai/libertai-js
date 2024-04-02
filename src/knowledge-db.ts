@@ -4,22 +4,22 @@ import {
   Document,
   Embedding,
   SearchResult,
-  Config,
+  KnowledgeDbConfig,
   PartialEmbeddingWithDistance,
 } from './types';
-import { defaultConfig } from './config';
+import { defaultKnowledgeDbConfig } from './config';
 import idb from './idb';
 import { chunkText, embed, createDocument, createEmbedding } from './utils';
 
 export class KnowledgeDb {
-  config: Config;
+  config: KnowledgeDbConfig = defaultKnowledgeDbConfig;
 
   documents: Document[];
   store: LocalForage;
 
   constructor() {
     // Initialize the configuration
-    this.config = defaultConfig;
+    this.config = defaultKnowledgeDbConfig;
 
     // Initialize an Array to keep track of our documents
     this.documents = [];

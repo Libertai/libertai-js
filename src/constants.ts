@@ -6,7 +6,6 @@ export const DEFAULT_DOCUMENTS_STORE_KEY = 'knowledge-db-documents';
 
 export const DEFAULT_ASSISTANT_CHATS_STORE_NAME = 'assistant-chats';
 
-
 export default {
   DEFAULT_EMBEDDING_API_URL,
   DEFAULT_KNOWLEDGE_DB_STORE_NAME,

@@ -33,6 +33,33 @@ export type KnowledgeDbConfig = {
   knowledgeDbDocumentsKey: string;
 };
 
+/* Chat Interface types */
+
+// TODO: this might be better placed at a higher level, but for now it's here
+export interface Chat {
+  // Chat id
+  id: string;
+  // Chat name
+  title: string;
+  // Chat particpant's User Name
+  username: string;
+  // The model in use for the chat
+  model: Model;
+  // Ordered list of chat messages
+  messages: Message[];
+}
+
+export interface Message {
+  // Ordered message id
+  id: number;
+  // Date and time the message was sent
+  timestamp: Date;
+  // The user sending the message
+  role: string;
+  // Message content
+  content: string;
+}
+
 /* Inference types */
 
 // Basic ChatMl format
@@ -42,13 +69,13 @@ export interface ChatMl {
   // Suffix to user input or model output
   userAppend: string;
   // Character to separate messages
-  line_separator: string;
+  lineSeparator: string;
 
   // Default stop sequence for the model. This will be used to
   //  generate prompts for the model
   stopSequence: string;
   // Some models may require additional stop sequences, but we'll separate those
-  additioanlStopSequences: string[];
+  additionalStopSequences: string[];
 }
 
 export interface Persona {
@@ -73,21 +100,19 @@ export interface Model {
 
   /* Inferencing parameters */
 
-  // TODO: how is this used?
-  // Max length of the generated text
-  maxLength: number;
+  // Maximum number of tokens to include in a prompt
+  maxTokens: number;
+  // Maximum number of tokens to generate
+  maxPredict: number;
   // Max number of tries to generate a response
   maxTries: number;
   // Max number of tokens to generate
-  maxTokens: number;
   temperature: number;
   topP: number;
   topK: number;
+  minP: number;
 
   /* Prompt formatting */
   chatMl: ChatMl;
   persona: Persona;
 }
-
-
-
