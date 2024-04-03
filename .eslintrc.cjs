@@ -10,6 +10,9 @@ module.exports = {
   rules: {
     'ban-ts-comment': 'off',
     '@typescript-eslint/no-use-before-define': ['off', 'nofunc'],
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+    ],
   },
 };

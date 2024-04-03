@@ -38,6 +38,8 @@ export interface Chat {
   username: string;
   // The model in use for the chat
   model: Model;
+  // The persona in use for the chat
+  persona: Persona;
   // Ordered list of chat messages
   messages: Message[];
 }
@@ -56,6 +58,7 @@ export interface Message {
 export interface PartialChat {
   id: string;
   title: string;
+  model: Model;
 }
 
 /* Inference types */
@@ -77,6 +80,10 @@ export interface ChatMl {
 }
 
 export interface Persona {
+  id: number;
+  // avatarUrl
+  avatarUrl: string;
+
   // Persona name
   name: string;
 
@@ -93,6 +100,8 @@ export interface Persona {
 export interface Model {
   /* Resource definition */
 
+  // Model Name
+  name: string;
   // Model Api endpoint
   apiUrl: string;
 
@@ -112,7 +121,6 @@ export interface Model {
 
   /* Prompt formatting */
   chatMl: ChatMl;
-  persona: Persona;
 }
 
 /* Store Configuration types */
@@ -126,7 +134,7 @@ export type KnowledgeStoreConfig = {
   documentsKey: string;
 };
 
-export type ChatStoreConfig = {
+export type ChatsStoreConfig = {
   // Name of the local store to use
   storeName: string;
 };

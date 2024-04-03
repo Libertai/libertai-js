@@ -4,7 +4,7 @@ import {
   DEFAULT_KNOWLEDGE_STORE_NAME,
   DEFAULT_CHATS_STORE_NAME,
 } from './constants.js';
-import { KnowledgeStoreConfig, ChatStoreConfig } from './types.js';
+import { KnowledgeStoreConfig, ChatsStoreConfig } from './types.js';
 
 export const defaultKnowledgeStoreConfig = {
   embeddingApiUrl: DEFAULT_EMBEDDING_API_URL,
@@ -13,11 +13,11 @@ export const defaultKnowledgeStoreConfig = {
   documentsKey: DEFAULT_KNOWLEDGE_STORE_DOCUMENTS_KEY,
 } as KnowledgeStoreConfig;
 
-export const defaultChatStoreConfig = {
+export const defaultChatsStoreConfig = {
   storeName: DEFAULT_CHATS_STORE_NAME,
-} as ChatStoreConfig;
+} as ChatsStoreConfig;
 
 export default {
   defaultKnowledgeStoreConfig,
-  defaultChatStoreConfig,
+  defaultChatsStoreConfig,
 };
