@@ -7,7 +7,7 @@ import { Document, Embedding } from './types';
 /* Inferencing utility functions */
 
 // TODO: more sophisticated tokenization
-export function calculateTokenLength(input: string) {
+export function calculateTokenLength(input: string): number {
   return input.length / 2.7;
 }
 

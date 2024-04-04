@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 import { Persona, Model, Message } from './types';
 import { calculateTokenLength } from './utils';
 
@@ -10,7 +12,7 @@ export class LlamaCppApiEngine {
     this.slots = new Map();
   }
 
-  clearSlots() {
+  clearSlots(): void {
     this.slots.clear();
   }
 
@@ -22,6 +24,11 @@ export class LlamaCppApiEngine {
     persona: Persona
   ): AsyncGenerator<{ content: string; stopped: boolean }> {
     const maxTries = model.maxTries;
+    const maxPredict = model.maxPredict;
+    const stop_sequences = model.chatMl.additionalStopSequences.concat(
+      model.chatMl.stopSequence
+    );
+
     // Prepare the prompt
     const prompt = this.preparePrompt(messages, model, persona);
 
@@ -30,13 +37,29 @@ export class LlamaCppApiEngine {
     let tries = 0;
     while (!stopped && tries < maxTries) {
       tries += 1;
-      const [lastResult, stop] = await this.complete(
+      // Ignore the stop, as for some reason it is not accurate for the time being
+      const [lastResult, _stop] = await this.complete(
         prompt + compoundedResult,
         model
       );
-      compoundedResult = compoundedResult + lastResult;
-      if (lastResult.length == 1 || stop) {
+      let fullResults = compoundedResult + lastResult;
+      for (let i = 0; i < stop_sequences.length; i++) {
+        fullResults = fullResults.split(`\n${stop_sequences[i]}`).join('|||||');
+        fullResults = fullResults.split(`${stop_sequences[i]}`).join('|||||');
+      }
+      let results = fullResults.split('|||||');
+
+      compoundedResult = results[0].trimEnd();
+
+      let to_yield = compoundedResult;
+
+      if ((results.length > 1) || (lastResult.length < maxPredict)) {
         stopped = true;
+      } else {
+        stopped = false;
+        if (tries < maxTries) {
+          to_yield += ' *[writing ...]*';
+        }
       }
       yield { content: compoundedResult, stopped };
     }
@@ -89,17 +112,19 @@ export class LlamaCppApiEngine {
   ): Promise<[string, boolean]> {
     const chatMl = model.chatMl;
     const slotId = this.slots.get(model.apiUrl) || -1;
-    const params = {
+    console.log('libertai-js::LlamaCppApiEngine::complete - prompt = ', prompt);
+    console.log('libertai-js::LlamaCppApiEngine::complete - slotId = ', slotId);
+    let params = {
       // Define the prompt
       prompt: prompt,
-      stream,
-
+      stream: false,
       // Set inference parameters
       temperature: model.temperature,
       n_predict: model.maxPredict,
       top_p: model.topP,
       top_k: model.topK,
       min_p: model.minP,
+
       typical_p: 1,
       tfs_z: 1,
 
@@ -114,15 +139,14 @@ export class LlamaCppApiEngine {
     };
 
     // Make the request
-    const response = await fetch(model.apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(params),
+    const response = await axios.post(model.apiUrl, params, {
+      withCredentials: true,
     });
-    // Parse the response as JSON
-    const data = await response.json();
+    console.log(
+      'libertai-js::LlamaCppApiEngine::complete - response = ',
+      response
+    );
+    const data = response.data;
 
     // Parse the response
     const slot_id = data.id_slot || data.slot_id;
@@ -140,25 +164,24 @@ export class LlamaCppApiEngine {
     let usedTokens = 0;
     const maxTokens = model.maxTokens;
     const chatMl = model.chatMl;
-    console.log(chatMl);
 
     // Prepare our system prompt
     let systemPrompt = '';
-    systemPrompt += `${chatMl.userPrepend}SYSTEM${chatMl.lineSeparator}`;
+    systemPrompt += `${chatMl.userPrepend}system${chatMl.lineSeparator}`;
     systemPrompt += `You are ${persona.name}${chatMl.lineSeparator}`;
     systemPrompt += `${persona.description}${chatMl.lineSeparator}`;
-    systemPrompt += `${chatMl.stopSequence}`;
+    systemPrompt += `${chatMl.stopSequence}${chatMl.lineSeparator}`;
 
     // Determine how many tokens we have left
     usedTokens = calculateTokenLength(systemPrompt);
 
     // Iterate over messagse in reverse order
     // to generate the chat log
-    let chatLog = `${chatMl.userPrepend}${persona.name}${chatMl.lineSeparator}`;
+    let chatLog = `${chatMl.userPrepend}${persona.name.toLowerCase()}${chatMl.lineSeparator}`;
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i];
       let messageLog = '';
-      messageLog += `${chatMl.userPrepend}${message.role}${chatMl.lineSeparator}`;
+      messageLog += `${chatMl.userPrepend}${message.role.toLowerCase()}${chatMl.lineSeparator}`;
       messageLog += `${message.content}${chatMl.lineSeparator}`;
       messageLog += `${chatMl.stopSequence}${chatMl.lineSeparator}`;
 

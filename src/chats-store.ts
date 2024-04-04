@@ -67,24 +67,13 @@ export class ChatsStore {
   }
 
   /**
-   * Update a chat's model
+   * Update a chat with a partial
    */
-  async updateChatModel(chatId: string, model: Model): Promise<void> {
-    const chat = await this.readChat(chatId);
-    if (chat) {
-      chat.model = model;
-      await idb.put<Chat>(chatId, chat, this.store);
-    }
-  }
-
-  /**
-   * Update a chat's title
-   */
-  async updateChatTitle(chatId: string, title: string): Promise<void> {
-    const chat = await this.readChat(chatId);
-    if (chat) {
-      chat.title = title;
-      await idb.put<Chat>(chatId, chat, this.store);
+  async updateChat(chatId: string, chat: Partial<Chat>): Promise<void> {
+    const fullChat = await this.readChat(chatId);
+    if (fullChat) {
+      const updatedChat = { ...fullChat, ...chat };
+      await idb.put<Chat>(chatId, updatedChat, this.store);
     }
   }
 
@@ -134,13 +123,16 @@ export class ChatsStore {
     if (!chat) {
       throw new Error('Chat not found');
     }
-    const lastMessage = chat.messages[-1];
     const message: Message = {
-      id: lastMessage.id + 1,
+      id: 0,
       role: chat.persona.name,
       content: responseContent,
       timestamp: new Date(),
     };
+    const lastMessage = chat.messages[-1];
+    if (lastMessage) {
+      message.id = lastMessage.id + 1;
+    }
     chat.messages.push(message);
     await idb.put<Chat>(chatId, chat, this.store);
     return message;
