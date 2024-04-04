@@ -47,13 +47,13 @@ export class LlamaCppApiEngine {
         fullResults = fullResults.split(`\n${stop_sequences[i]}`).join('|||||');
         fullResults = fullResults.split(`${stop_sequences[i]}`).join('|||||');
       }
-      let results = fullResults.split('|||||');
+      const results = fullResults.split('|||||');
 
       compoundedResult = results[0].trimEnd();
 
       let to_yield = compoundedResult;
 
-      if ((results.length > 1) || (lastResult.length < maxPredict)) {
+      if (results.length > 1 || lastResult.length < maxPredict) {
         stopped = true;
       } else {
         stopped = false;
@@ -61,7 +61,7 @@ export class LlamaCppApiEngine {
           to_yield += ' *[writing ...]*';
         }
       }
-      yield { content: compoundedResult, stopped };
+      yield { content: to_yield, stopped };
     }
   }
 
@@ -80,8 +80,8 @@ export class LlamaCppApiEngine {
     ];
     const chatMl = model.chatMl;
     let prompt = '';
-    prompt += `${chatMl.userPrepend}SYSTEM${chatMl.lineSeparator}`;
-    prompt += `Provide snippy summary of the first sentence of the provided input${chatMl.lineSeparator}`;
+    prompt += `${chatMl.userPrepend}system${chatMl.lineSeparator}`;
+    prompt += `You are summary function provided with input. Provide an at most 5 word summary of the first sentence of the provided input for the purpose of determining menu item names`;
     prompt += `${chatMl.lineSeparator}`;
     prompt += `${chatMl.stopSequence}${chatMl.lineSeparator}`;
 
@@ -95,8 +95,10 @@ export class LlamaCppApiEngine {
     }
     prompt += `${chatMl.userPrepend}input${chatMl.lineSeparator}`;
     prompt += `${text}${chatMl.lineSeparator}`;
+    prompt += `${chatMl.stopSequence}${chatMl.lineSeparator}`;
+    prompt += `${chatMl.userPrepend}summary${chatMl.lineSeparator}`;
 
-    const [summary, _stop] = await this.complete(prompt, model, false);
+    const [summary, _stop] = await this.complete(prompt, model);
 
     // Split the response into lines
     return summary.split(chatMl.lineSeparator)[0];
@@ -105,16 +107,10 @@ export class LlamaCppApiEngine {
   /* Utils */
 
   /* Generate the next completion of a prompt */
-  async complete(
-    prompt: string,
-    model: Model,
-    stream = true
-  ): Promise<[string, boolean]> {
+  async complete(prompt: string, model: Model): Promise<[string, boolean]> {
     const chatMl = model.chatMl;
     const slotId = this.slots.get(model.apiUrl) || -1;
-    console.log('libertai-js::LlamaCppApiEngine::complete - prompt = ', prompt);
-    console.log('libertai-js::LlamaCppApiEngine::complete - slotId = ', slotId);
-    let params = {
+    const params = {
       // Define the prompt
       prompt: prompt,
       stream: false,
@@ -142,10 +138,6 @@ export class LlamaCppApiEngine {
     const response = await axios.post(model.apiUrl, params, {
       withCredentials: true,
     });
-    console.log(
-      'libertai-js::LlamaCppApiEngine::complete - response = ',
-      response
-    );
     const data = response.data;
 
     // Parse the response
