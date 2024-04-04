@@ -4,28 +4,28 @@ import {
   Document,
   Embedding,
   SearchResult,
-  Config,
+  KnowledgeStoreConfig,
   PartialEmbeddingWithDistance,
 } from './types';
-import { defaultConfig } from './config';
+import { defaultKnowledgeStoreConfig } from './config';
 import idb from './idb';
 import { chunkText, embed, createDocument, createEmbedding } from './utils';
 
-export class KnowledgeDb {
-  config: Config;
+export class KnowledgeStore {
+  config: KnowledgeStoreConfig = defaultKnowledgeStoreConfig;
 
   documents: Document[];
   store: LocalForage;
 
   constructor() {
     // Initialize the configuration
-    this.config = defaultConfig;
+    this.config = defaultKnowledgeStoreConfig;
 
     // Initialize an Array to keep track of our documents
     this.documents = [];
 
     // Initialize the localforage store
-    this.store = idb.createStore(this.config.knowledgeDbStoreName);
+    this.store = idb.createStore(this.config.storeName);
 
     this.load = this.load.bind(this);
     this.addDocument = this.addDocument.bind(this);
@@ -36,8 +36,7 @@ export class KnowledgeDb {
   async load(): Promise<Document[]> {
     // Load the documents from localforage
     const item = await idb.get<Document[]>(
-      this.config.knowledgeDbDocumentsKey,
-      (obj: unknown) => obj as Document[],
+      this.config.documentsKey,
       this.store
     );
     if (item) {
@@ -50,7 +49,7 @@ export class KnowledgeDb {
   }
 
   async addDocument(
-    this: KnowledgeDb,
+    this: KnowledgeStore,
     title: string,
     content: string
   ): Promise<Document> {
@@ -96,7 +95,7 @@ export class KnowledgeDb {
     // Iterate over all embeddings
     this.store.iterate((obj, id, _iterationNumber) => {
       // Skip the documents key
-      if (id === this.config.knowledgeDbDocumentsKey) return;
+      if (id === this.config.documentsKey) return;
       // Check if this is a valid embedding
       const embedding = obj as Embedding;
 
@@ -147,11 +146,7 @@ export class KnowledgeDb {
 
   async save(): Promise<void> {
     // Save the documents to localforage
-    await idb.put(
-      this.config.knowledgeDbDocumentsKey,
-      this.documents,
-      this.store
-    );
+    await idb.put(this.config.documentsKey, this.documents, this.store);
   }
 
   /* Private Arrow Functions */
@@ -174,5 +169,3 @@ export class KnowledgeDb {
     return;
   };
 }
-
-/* Utils */

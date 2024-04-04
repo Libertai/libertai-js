@@ -4,6 +4,15 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { Document, Embedding } from './types';
 
+/* Inferencing utility functions */
+
+// TODO: more sophisticated tokenization
+export function calculateTokenLength(input: string): number {
+  return input.length / 2.7;
+}
+
+/* Embedding utility functions */
+
 /*
  * Split a single Text Document into mutliple Documents of a given size
  */

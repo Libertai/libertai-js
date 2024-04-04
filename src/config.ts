@@ -1,17 +1,23 @@
 import {
   DEFAULT_EMBEDDING_API_URL,
-  DEFAULT_DOCUMENTS_STORE_KEY,
-  DEFAULT_KNOWLEDGE_DB_STORE_NAME,
+  DEFAULT_KNOWLEDGE_STORE_DOCUMENTS_KEY,
+  DEFAULT_KNOWLEDGE_STORE_NAME,
+  DEFAULT_CHATS_STORE_NAME,
 } from './constants.js';
-import { Config } from './types.js';
+import { KnowledgeStoreConfig, ChatsStoreConfig } from './types.js';
 
-export const defaultConfig = {
+export const defaultKnowledgeStoreConfig = {
   embeddingApiUrl: DEFAULT_EMBEDDING_API_URL,
 
-  knowledgeDbStoreName: DEFAULT_KNOWLEDGE_DB_STORE_NAME,
-  knowledgeDbDocumentsKey: DEFAULT_DOCUMENTS_STORE_KEY,
-} as Config;
+  storeName: DEFAULT_KNOWLEDGE_STORE_NAME,
+  documentsKey: DEFAULT_KNOWLEDGE_STORE_DOCUMENTS_KEY,
+} as KnowledgeStoreConfig;
+
+export const defaultChatsStoreConfig = {
+  storeName: DEFAULT_CHATS_STORE_NAME,
+} as ChatsStoreConfig;
 
 export default {
-  defaultConfig,
+  defaultKnowledgeStoreConfig,
+  defaultChatsStoreConfig,
 };

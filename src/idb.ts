@@ -16,11 +16,21 @@ export async function put<T>(
 
 export async function get<T>(
   id: string,
-  checkFn: (_obj: unknown) => T | null,
   store: LocalForage = localforage
 ): Promise<T | null> {
   const item = await store.getItem(id);
-  return checkFn(item);
+  // Check if item is null
+  if (item === null) {
+    return null;
+  }
+  // Otherwise, try to return item as T
+  // Capture any errors and return null
+  try {
+    return item as T;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
 }
 
 export async function exists(
