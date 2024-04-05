@@ -41,6 +41,7 @@
   "scripts": {
     "lint": "yarn eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
+    "format:check": "prettier --check src/**/*.ts",
     "prebuild": "rimraf dist",
     "build": "tsc && yarn run build:minified",
     "build:minified": "node scripts/build-minified.js",

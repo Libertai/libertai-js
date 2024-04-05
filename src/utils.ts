@@ -59,7 +59,7 @@ export function createDocument(title: string, tags: string[] = []): Document {
   return {
     id: uuidv4(),
     title,
-    tags,
+    tags: tags.map((tag) => tag.toLowerCase()),
   };
 }
 
