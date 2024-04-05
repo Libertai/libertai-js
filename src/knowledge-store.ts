@@ -68,91 +68,85 @@ export class KnowledgeStore {
     return doc;
   }
 
-  /**
-   * Search the documents in the store for the given query
-   * @param query The query to search for
-   * @param k The number of results to return
-   * @param max_distance The maximum distance between the query and a result
-   * @param tags The tags to filter by
-   * @returns A list of the k closest matches
-   */
-  async searchDocuments(
-    query: string,
-    k = 5,
-    max_distance = 15,
-    tags = []
-  ): Promise<SearchResult[]> {
-    const query_vector = await embed(query, this.config.embeddingApiUrl);
-    const matches = [] as SearchResult[];
-    let farthest = Number.MAX_VALUE;
-    let farthest_index = -1;
-    // Iterate over all embeddings
-    this.store.iterate((obj, id, _iterationNumber) => {
-      // Skip the documents key
-      if (id === this.config.documentsKey) return;
-      // Check if this is a valid embedding
-      const embedding = obj as Embedding;
+/**
+ * Search the documents in the store for the given query
+ * @param query The query to search for
+ * @param k The number of results to return
+ * @param max_distance The maximum distance between the query and a result
+ * @param tags The tags to filter by
+ * @returns A list of the k closest matches
+ */
+async searchDocuments(
+  query: string,
+  k = 5,
+  max_distance = 15,
+  tags = []
+): Promise<SearchResult[]> {
+  const query_vector = await embed(query, this.config.embeddingApiUrl);
+  const matches: SearchResult[] = [];
+  let farthest = Number.MAX_VALUE;
+  let farthest_index = -1;
 
-      // If we have tags, make sure the embedding has one of them
-      const doc = this.documents.get(embedding.documentId);
-      if (!doc) {
-        console.error(
-          `Embedding ${embedding.id} has no corresponding document`
-        );
-        return;
+  // Iterate over all embeddings
+  await this.store.iterate((obj, id, _iterationNumber) => {
+    // Skip the documents key
+    if (id === this.config.documentsKey) return;
+    // Check if this is a valid embedding
+    const embedding = obj as Embedding;
+
+    // If we have tags, make sure the embedding has one of them
+    const doc = this.documents.get(embedding.documentId);
+    if (!doc || !tags.some((tag) => doc.tags.includes(tag))) {
+      return;
+    }
+
+    // Get the euclidean distance between the query and the embedding
+    const euclidean_distance = distance.euclidean(
+      query_vector,
+      embedding.vector
+    );
+
+    // If the distance is greater than the max_distance, skip it
+    if (euclidean_distance > max_distance) return;
+
+    // If we have less than k matches, add this one
+    if (matches.length < k) {
+      matches.push({
+        content: embedding.content,
+        vector: embedding.vector,
+        distance: euclidean_distance,
+      });
+      // Make sure we keep track of the farthest match, if it is indeed the farthest
+      if (euclidean_distance > farthest) {
+        farthest = euclidean_distance;
+        farthest_index = matches.length - 1;
       }
-
-      // Filter by tags
-      for (const tag of tags) {
-        if (doc.tags.includes(tag)) {
-          break;
-        }
-        return;
-      }
-
-      // Get the euclidean distance between the query and the embedding
-      const euclidean_distance = distance.euclidean(
-        query_vector,
-        embedding.vector
-      );
-
-      // If the distance is greater than the max_distance, skip it
-      if (euclidean_distance > max_distance) return;
-
-      // If we have less than k matches, add this one
-      if (matches.length < k) {
-        matches.push({
-          content: embedding.content,
-          vector: embedding.vector,
-          distance: euclidean_distance,
-        });
-        // Make sure we keep track of the farthest match, if it is indeed the farthest
-        if (euclidean_distance > farthest) {
-          farthest = euclidean_distance;
-          farthest_index = matches.length - 1;
-        }
-      }
-      // Otherwise, decide if we should replace the farthest match
-      else if (euclidean_distance < farthest) {
-        // Replace the farthest match
-        matches[farthest_index] = {
-          content: embedding.content,
-          vector: embedding.vector,
-          distance: euclidean_distance,
-        };
-        // Naively find the new farthest match
-        farthest = Number.MIN_VALUE;
-        for (let i = 0; i < matches.length; i++) {
-          if (matches[i].distance > farthest) {
-            farthest = matches[i].distance;
-            farthest_index = i;
-          }
+    }
+    // Otherwise, decide if we should replace the farthest match
+    else if (euclidean_distance < farthest) {
+      // Replace the farthest match
+      matches[farthest_index] = {
+        content: embedding.content,
+        vector: embedding.vector,
+        distance: euclidean_distance,
+      };
+      // Naively find the new farthest match
+      farthest = Number.MIN_VALUE;
+      for (let i = 0; i < matches.length; i++) {
+        if (matches[i].distance > farthest) {
+          farthest = matches[i].distance;
+          farthest_index = i;
         }
       }
-    });
-    return matches;
-  }
+    }
+  });
 
+  // Sort the matches by distance
+  matches.sort((a, b) => a.distance - b.distance);
+
+  // Return the top k matches
+  return matches.slice(0, k);
+}
   /* State utils */
 
   async save(): Promise<void> {
