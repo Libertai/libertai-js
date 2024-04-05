@@ -71,6 +71,7 @@ export class KnowledgeStore {
   /**
    * Search the documents in the store for the given query
    * @param query The query to search for
+   * @param callback A callback to be called with each result
    * @param k The number of results to return
    * @param max_distance The maximum distance between the query and a result
    * @param tags The tags to filter by
@@ -83,12 +84,15 @@ export class KnowledgeStore {
     tags = []
   ): Promise<SearchResult[]> {
     const query_vector = await embed(query, this.config.embeddingApiUrl);
-    const matches: SearchResult[] = [];
-    let farthest = Number.MAX_VALUE;
-    let farthest_index = -1;
-
+    let matches: SearchResult[] | null = null;
+    matches = [];
+    let n = 0;
     // Iterate over all embeddings
     await this.store.iterate((obj, id, _iterationNumber) => {
+      if (n >= k) {
+        return;
+      }
+
       // Skip the documents key
       if (id === this.config.documentsKey) return;
       // Check if this is a valid embedding
@@ -96,8 +100,21 @@ export class KnowledgeStore {
 
       // If we have tags, make sure the embedding has one of them
       const doc = this.documents.get(embedding.documentId);
-      if (!doc || !tags.some((tag) => doc.tags.includes(tag))) {
+      if (!doc) {
+        console.error(
+          `Embedding ${embedding.id} has no corresponding document`
+        );
         return;
+      }
+
+      // Filter by tags
+      if (tags.length !== 0) {
+        for (const tag of tags) {
+          if (doc.tags.includes(tag)) {
+            break;
+          }
+          return;
+        }
       }
 
       // Get the euclidean distance between the query and the embedding
@@ -108,21 +125,20 @@ export class KnowledgeStore {
 
       // If the distance is greater than the max_distance, skip it
       if (euclidean_distance > max_distance) return;
-  
-      // Push the match to the matches array
+
+      console.log(
+        `Found document ${doc.title} with distance ${euclidean_distance}`
+      );
       matches.push({
         content: embedding.content,
         vector: embedding.vector,
         distance: euclidean_distance,
       });
+      n += 1;
     });
-
-    // Sort the matches by distance least to greatest
-    matches.sort((a, b) => a.distance - b.distance);
-
-    // Return the top k matches
-    return matches.slice(0, k);
+    return matches;
   }
+
   /* State utils */
 
   async save(): Promise<void> {
