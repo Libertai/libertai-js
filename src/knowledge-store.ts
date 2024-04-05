@@ -108,40 +108,16 @@ export class KnowledgeStore {
 
       // If the distance is greater than the max_distance, skip it
       if (euclidean_distance > max_distance) return;
-
-      // If we have less than k matches, add this one
-      if (matches.length < k) {
-        matches.push({
-          content: embedding.content,
-          vector: embedding.vector,
-          distance: euclidean_distance,
-        });
-        // Make sure we keep track of the farthest match, if it is indeed the farthest
-        if (euclidean_distance > farthest) {
-          farthest = euclidean_distance;
-          farthest_index = matches.length - 1;
-        }
-      }
-      // Otherwise, decide if we should replace the farthest match
-      else if (euclidean_distance < farthest) {
-        // Replace the farthest match
-        matches[farthest_index] = {
-          content: embedding.content,
-          vector: embedding.vector,
-          distance: euclidean_distance,
-        };
-        // Naively find the new farthest match
-        farthest = Number.MIN_VALUE;
-        for (let i = 0; i < matches.length; i++) {
-          if (matches[i].distance > farthest) {
-            farthest = matches[i].distance;
-            farthest_index = i;
-          }
-        }
-      }
+  
+      // Push the match to the matches array
+      matches.push({
+        content: embedding.content,
+        vector: embedding.vector,
+        distance: euclidean_distance,
+      });
     });
 
-    // Sort the matches by distance
+    // Sort the matches by distance least to greatest
     matches.sort((a, b) => a.distance - b.distance);
 
     // Return the top k matches
