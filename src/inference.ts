@@ -22,7 +22,7 @@ export class LlamaCppApiEngine {
     messages: Message[],
     model: Model,
     persona: Persona,
-    debug: boolean = false,
+    debug: boolean = false
   ): AsyncGenerator<{ content: string; stopped: boolean }> {
     const maxTries = model.maxTries;
     const maxPredict = model.maxPredict;
@@ -34,7 +34,10 @@ export class LlamaCppApiEngine {
     const prompt = this.preparePrompt(messages, model, persona);
 
     if (debug) {
-      console.log('libertai-js::LlamaCppApiEngine::generateAnswer::prompt', prompt);
+      console.log(
+        'libertai-js::LlamaCppApiEngine::generateAnswer::prompt',
+        prompt
+      );
     }
 
     let compoundedResult = '';
@@ -49,7 +52,10 @@ export class LlamaCppApiEngine {
       );
 
       if (debug) {
-        console.log('libertai-js::LlamaCppApiEngine::generateAnswer::lastResult', lastResult);
+        console.log(
+          'libertai-js::LlamaCppApiEngine::generateAnswer::lastResult',
+          lastResult
+        );
       }
 
       let fullResults = compoundedResult + lastResult;
