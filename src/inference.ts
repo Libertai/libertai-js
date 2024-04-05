@@ -21,7 +21,8 @@ export class LlamaCppApiEngine {
   async *generateAnswer(
     messages: Message[],
     model: Model,
-    persona: Persona
+    persona: Persona,
+    debug: boolean = false,
   ): AsyncGenerator<{ content: string; stopped: boolean }> {
     const maxTries = model.maxTries;
     const maxPredict = model.maxPredict;
@@ -31,6 +32,10 @@ export class LlamaCppApiEngine {
 
     // Prepare the prompt
     const prompt = this.preparePrompt(messages, model, persona);
+
+    if (debug) {
+      console.log('libertai-js::LlamaCppApiEngine::generateAnswer::prompt', prompt);
+    }
 
     let compoundedResult = '';
     let stopped = false;
@@ -42,6 +47,11 @@ export class LlamaCppApiEngine {
         prompt + compoundedResult,
         model
       );
+
+      if (debug) {
+        console.log('libertai-js::LlamaCppApiEngine::generateAnswer::lastResult', lastResult);
+      }
+
       let fullResults = compoundedResult + lastResult;
       for (let i = 0; i < stop_sequences.length; i++) {
         fullResults = fullResults.split(`\n${stop_sequences[i]}`).join('|||||');
