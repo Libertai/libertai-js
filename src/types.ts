@@ -1,29 +1,32 @@
 /* Knowledge types */
 
-// For now, just don't worry about the content of the document
-//  That will be chunked across multiple embeddings
+// Document metadata
 export interface Document {
+  // Documents should have a uniqueid
   id: string;
+  // Title of the document
   title: string;
+  // Tags for the document. Can be used to place docments in a collection.
+  tags: string[];
 }
 
+// Embeddings data we store
 export interface Embedding {
+  // Embeddings have a unique id
   id: string;
+  // Embeddings refer back to the document they are from
   documentId: string;
+  // The actual emebedding content
   content: string;
+  // The embedding vector (float[768])
   vector: number[];
 }
 
-export interface PartialEmbeddingWithDistance {
+// Knowledge search result
+export interface SearchResult {
   content: string;
   vector: number[];
   distance: number;
-}
-
-export interface SearchResult {
-  query: string;
-  vector: number[];
-  matches: PartialEmbeddingWithDistance[];
 }
 
 /* Chat Interface types */

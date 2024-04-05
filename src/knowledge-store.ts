@@ -5,7 +5,6 @@ import {
   Embedding,
   SearchResult,
   KnowledgeStoreConfig,
-  PartialEmbeddingWithDistance,
 } from './types';
 import { defaultKnowledgeStoreConfig } from './config';
 import idb from './idb';
@@ -14,7 +13,7 @@ import { chunkText, embed, createDocument, createEmbedding } from './utils';
 export class KnowledgeStore {
   config: KnowledgeStoreConfig = defaultKnowledgeStoreConfig;
 
-  documents: Document[];
+  documents: Map<string, Document>;
   store: LocalForage;
 
   constructor() {
@@ -22,7 +21,7 @@ export class KnowledgeStore {
     this.config = defaultKnowledgeStoreConfig;
 
     // Initialize an Array to keep track of our documents
-    this.documents = [];
+    this.documents = new Map<string, Document>();
 
     // Initialize the localforage store
     this.store = idb.createStore(this.config.storeName);
@@ -33,16 +32,14 @@ export class KnowledgeStore {
     this.save = this.save.bind(this);
   }
 
-  async load(): Promise<Document[]> {
+  async load(): Promise<Map<string, Document>> {
     // Load the documents from localforage
-    const item = await idb.get<Document[]>(
+    const item = await idb.get<Map<string, Document>>(
       this.config.documentsKey,
       this.store
     );
     if (item) {
       this.documents = item;
-    } else {
-      this.documents = [];
     }
 
     return this.documents;
@@ -51,45 +48,42 @@ export class KnowledgeStore {
   async addDocument(
     this: KnowledgeStore,
     title: string,
-    content: string
+    content: string,
+    tags = []
   ): Promise<Document> {
-    console.log('KnowledgeDB::addDocument');
-
     // Create a new document object
-    const document = createDocument(title);
-
+    const doc = createDocument(title, tags);
     // Split the document into chunks (which are just Lanhchain documents)
     const chunks = await chunkText(title, content);
-
     // TODO: There's probably a better way to background
     //  these embeddings, but for now we'll just do it in series
     const promises = [];
     for (const chunk of chunks) {
-      promises.push(this.embedChunk(document.id, chunk));
+      promises.push(this.embedChunk(doc.id, chunk));
     }
     await Promise.all(promises);
-    console.log('KnowledgeDB::addDocument - Embeddings Added');
-
     // Add the document to our list of documents
-    this.documents.push(document);
+    this.documents.set(doc.id, doc);
     await this.save();
-    console.log('KnowledgeDB::addDocument - Document Saved');
-
-    return document;
+    return doc;
   }
 
+  /**
+   * Search the documents in the store for the given query
+   * @param query The query to search for
+   * @param k The number of results to return
+   * @param max_distance The maximum distance between the query and a result
+   * @param tags The tags to filter by
+   * @returns A list of the k closest matches
+   */
   async searchDocuments(
     query: string,
     k = 5,
-    max_distance = 15
-  ): Promise<SearchResult> {
-    console.log('KnowledgeDB::searchDocuments');
+    max_distance = 15,
+    tags = []
+  ): Promise<SearchResult[]> {
     const query_vector = await embed(query, this.config.embeddingApiUrl);
-    const res = {
-      query,
-      vector: query_vector,
-      matches: [] as PartialEmbeddingWithDistance[],
-    } as SearchResult;
+    const matches = [] as SearchResult[];
     let farthest = Number.MAX_VALUE;
     let farthest_index = -1;
     // Iterate over all embeddings
@@ -98,6 +92,23 @@ export class KnowledgeStore {
       if (id === this.config.documentsKey) return;
       // Check if this is a valid embedding
       const embedding = obj as Embedding;
+
+      // If we have tags, make sure the embedding has one of them
+      const doc = this.documents.get(embedding.documentId);
+      if (!doc) {
+        console.error(
+          `Embedding ${embedding.id} has no corresponding document`
+        );
+        return;
+      }
+
+      // Filter by tags
+      for (const tag of tags) {
+        if (doc.tags.includes(tag)) {
+          break;
+        }
+        return;
+      }
 
       // Get the euclidean distance between the query and the embedding
       const euclidean_distance = distance.euclidean(
@@ -109,8 +120,8 @@ export class KnowledgeStore {
       if (euclidean_distance > max_distance) return;
 
       // If we have less than k matches, add this one
-      if (res.matches.length < k) {
-        res.matches.push({
+      if (matches.length < k) {
+        matches.push({
           content: embedding.content,
           vector: embedding.vector,
           distance: euclidean_distance,
@@ -118,28 +129,28 @@ export class KnowledgeStore {
         // Make sure we keep track of the farthest match, if it is indeed the farthest
         if (euclidean_distance > farthest) {
           farthest = euclidean_distance;
-          farthest_index = res.matches.length - 1;
+          farthest_index = matches.length - 1;
         }
       }
       // Otherwise, decide if we should replace the farthest match
       else if (euclidean_distance < farthest) {
         // Replace the farthest match
-        res.matches[farthest_index] = {
+        matches[farthest_index] = {
           content: embedding.content,
           vector: embedding.vector,
           distance: euclidean_distance,
         };
         // Naively find the new farthest match
         farthest = Number.MIN_VALUE;
-        for (let i = 0; i < res.matches.length; i++) {
-          if (res.matches[i].distance > farthest) {
-            farthest = res.matches[i].distance;
+        for (let i = 0; i < matches.length; i++) {
+          if (matches[i].distance > farthest) {
+            farthest = matches[i].distance;
             farthest_index = i;
           }
         }
       }
     });
-    return res;
+    return matches;
   }
 
   /* State utils */

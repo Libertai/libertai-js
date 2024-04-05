@@ -55,10 +55,11 @@ export async function embed(
   return response.data.embedding;
 }
 
-export function createDocument(title: string): Document {
+export function createDocument(title: string, tags: string[] = []): Document {
   return {
     id: uuidv4(),
-    title: title,
+    title,
+    tags,
   };
 }
 
