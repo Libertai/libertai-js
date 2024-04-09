@@ -5,20 +5,20 @@ import {
   Embedding,
   SearchResult,
   KnowledgeStoreConfig,
-} from './types';
-import { defaultKnowledgeStoreConfig } from './config';
-import idb from './idb';
-import { chunkText, embed, createDocument, createEmbedding } from './utils';
+} from './types.js';
+import { defaultKnowledgeStoreConfig } from './config.js';
+import idb from './idb.js';
+import { chunkText, embed, createDocument, createEmbedding } from './utils.js';
 
 export class KnowledgeStore {
-  config: KnowledgeStoreConfig = defaultKnowledgeStoreConfig;
+  config: KnowledgeStoreConfig;
 
   documents: Map<string, Document>;
   store: LocalForage;
 
-  constructor() {
+  constructor(config?: KnowledgeStoreConfig) {
     // Initialize the configuration
-    this.config = defaultKnowledgeStoreConfig;
+    this.config = { ...defaultKnowledgeStoreConfig, ...config };
 
     // Initialize an Array to keep track of our documents
     this.documents = new Map<string, Document>();
@@ -46,7 +46,6 @@ export class KnowledgeStore {
   }
 
   async addDocument(
-    this: KnowledgeStore,
     title: string,
     content: string,
     tags = []
@@ -55,8 +54,7 @@ export class KnowledgeStore {
     const doc = createDocument(title, tags);
     // Split the document into chunks (which are just Lanhchain documents)
     const chunks = await chunkText(title, content);
-    // TODO: There's probably a better way to background
-    //  these embeddings, but for now we'll just do it in series
+    // Embed each chunk and save the embeddings to localforage
     const promises = [];
     for (const chunk of chunks) {
       promises.push(this.embedChunk(doc.id, chunk));
@@ -69,12 +67,12 @@ export class KnowledgeStore {
   }
 
   /**
-   * Search the documents in the store for the given query
+   * Search the documents in the store for the given query for similarity by euclidean distance
    * @param query The query to search for
    * @param callback A callback to be called with each result
    * @param k The number of results to return
    * @param max_distance The maximum distance between the query and a result
-   * @param tags The tags to filter by
+   * @param tags The tags to filter by. If empty, no filtering is done
    * @returns A list of the k closest matches
    */
   async searchDocuments(
@@ -107,7 +105,7 @@ export class KnowledgeStore {
         return;
       }
 
-      // Filter by tags
+      // Filter by tags (if any are provided)
       if (tags.length !== 0) {
         for (const tag of tags) {
           if (doc.tags.includes(tag)) {

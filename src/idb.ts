@@ -52,7 +52,6 @@ export async function dropStore(store: LocalForage): Promise<void> {
   return store.dropInstance();
 }
 
-/* istanbul ignore next */
 export async function clear(store?: LocalForage): Promise<void> {
   if (store) {
     return dropStore(store);

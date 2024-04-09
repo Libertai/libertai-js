@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-import { Persona, Model, Message } from './types';
-import { calculateTokenLength } from './utils';
+import { Persona, Model, Message } from './types.js';
+import { calculateTokenLength } from './utils.js';
 
-// Simple wrapper class around basic AI inference utilities
+// Simple wrapper class around basic AI inference
 export class LlamaCppApiEngine {
   // Map of endpoints to active slot ids
   slots: Map<string, number> = new Map();
@@ -16,8 +16,16 @@ export class LlamaCppApiEngine {
     this.slots.clear();
   }
 
-  // Generate an anser to a sequence of messages
-  // using the provided model
+  /**
+   * Generate an answer to a sequence of messages
+   * using the provided model and persona
+   * @async
+   * @generator
+   * @param {Message[]} messages - The sequence of messages to generate an answer for
+   * @param {Model} model - The model to use for inference
+   * @param {Persona} persona - The persona to use for inference
+   * @param {boolean} debug - Whether to print debug information
+   */
   async *generateAnswer(
     messages: Message[],
     model: Model,
@@ -26,8 +34,8 @@ export class LlamaCppApiEngine {
   ): AsyncGenerator<{ content: string; stopped: boolean }> {
     const maxTries = model.maxTries;
     const maxPredict = model.maxPredict;
-    const stop_sequences = model.chatMl.additionalStopSequences.concat(
-      model.chatMl.stopSequence
+    const stop_sequences = model.promptFormat.additionalStopSequences.concat(
+      model.promptFormat.stopSequence
     );
 
     // Prepare the prompt
@@ -53,7 +61,7 @@ export class LlamaCppApiEngine {
 
       if (debug) {
         console.log(
-          'libertai-js::LlamaCppApiEngine::generateAnswer::lastResult',
+          'libertai-js::LlamaCppApiEngine::generateAnswer -- completion: ',
           lastResult
         );
       }
@@ -81,50 +89,14 @@ export class LlamaCppApiEngine {
     }
   }
 
-  // Summarize a short snippet of text
-  async summarizeSnippet(text: string, model: Model): Promise<string> {
-    const examples = [
-      {
-        input: 'Hello, can you please write a short hello world code for me?',
-        summary: 'Hello world',
-      },
-      {
-        input:
-          "What is the color of Henry IV's white horse?\nI'm not really sure",
-        summary: "Henry IV's horse color",
-      },
-    ];
-    const chatMl = model.chatMl;
-    let prompt = '';
-    prompt += `${chatMl.userPrepend}system${chatMl.lineSeparator}`;
-    prompt += `You are summary function provided with input. Provide an at most 5 word summary of the first sentence of the provided input for the purpose of determining menu item names`;
-    prompt += `${chatMl.lineSeparator}`;
-    prompt += `${chatMl.stopSequence}${chatMl.lineSeparator}`;
-
-    for (const example of examples) {
-      prompt += `${chatMl.userPrepend}input${chatMl.lineSeparator}`;
-      prompt += `${example.input}${chatMl.lineSeparator}`;
-      prompt += `${chatMl.stopSequence}${chatMl.lineSeparator}`;
-      prompt += `${chatMl.userPrepend}summary${chatMl.lineSeparator}`;
-      prompt += `${example.summary}${chatMl.lineSeparator}`;
-      prompt += `${chatMl.stopSequence}${chatMl.lineSeparator}`;
-    }
-    prompt += `${chatMl.userPrepend}input${chatMl.lineSeparator}`;
-    prompt += `${text}${chatMl.lineSeparator}`;
-    prompt += `${chatMl.stopSequence}${chatMl.lineSeparator}`;
-    prompt += `${chatMl.userPrepend}summary${chatMl.lineSeparator}`;
-
-    const [summary, _stop] = await this.complete(prompt, model);
-
-    // Split the response into lines
-    return summary.split(chatMl.lineSeparator)[0];
-  }
-
   /* Utils */
 
   /* Generate the next completion of a prompt */
-  async complete(prompt: string, model: Model): Promise<[string, boolean]> {
-    const chatMl = model.chatMl;
+  private async complete(
+    prompt: string,
+    model: Model
+  ): Promise<[string, boolean]> {
+    const promptFormat = model.promptFormat;
     const slotId = this.slots.get(model.apiUrl) || -1;
     const params = {
       // Define the prompt
@@ -147,7 +119,10 @@ export class LlamaCppApiEngine {
       cache_prompt: true,
 
       // Set the stop sequence
-      stop: [chatMl.stopSequence, ...chatMl.additionalStopSequences],
+      stop: [
+        promptFormat.stopSequence,
+        ...promptFormat.additionalStopSequences,
+      ],
     };
 
     // Make the request
@@ -171,33 +146,39 @@ export class LlamaCppApiEngine {
   ): string {
     let usedTokens = 0;
     const maxTokens = model.maxTokens;
-    const chatMl = model.chatMl;
+    const promptFormat = model.promptFormat;
 
     // Prepare our system prompt
     let systemPrompt = '';
-    systemPrompt += `${chatMl.userPrepend}system${chatMl.lineSeparator}`;
-    systemPrompt += `You are ${persona.name}${chatMl.lineSeparator}`;
-    systemPrompt += `${persona.description}${chatMl.lineSeparator}`;
-    systemPrompt += `${chatMl.stopSequence}${chatMl.lineSeparator}`;
+    systemPrompt += `${promptFormat.userPrepend}system${promptFormat.lineSeparator}`;
+    systemPrompt += `You are ${persona.name}${promptFormat.lineSeparator}`;
+    systemPrompt += `${persona.description}${promptFormat.lineSeparator}`;
+    systemPrompt += `${promptFormat.stopSequence}${promptFormat.lineSeparator}`;
 
     // Determine how many tokens we have left
     usedTokens = calculateTokenLength(systemPrompt);
 
     // Iterate over messagse in reverse order
     // to generate the chat log
-    let chatLog = `${chatMl.userPrepend}${persona.name.toLowerCase()}${chatMl.lineSeparator}`;
+    let chatLog = `${promptFormat.userPrepend}${persona.name.toLowerCase()}${promptFormat.lineSeparator}`;
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i];
+      const timestamp_string = message.timestamp
+        ? ` (at ${message.timestamp.toISOString})`
+        : '';
       let messageLog = '';
-      messageLog += `${chatMl.userPrepend}${message.role.toLowerCase()}${chatMl.lineSeparator}`;
-      messageLog += `${message.content}${chatMl.lineSeparator}`;
-      messageLog += `${chatMl.stopSequence}${chatMl.lineSeparator}`;
+      messageLog += `${promptFormat.userPrepend}${message.role.toLowerCase()}${timestamp_string}${promptFormat.lineSeparator}`;
+      messageLog += `${message.content}${promptFormat.lineSeparator}`;
+      messageLog += `${promptFormat.stopSequence}${promptFormat.lineSeparator}`;
 
       const messageTokens = calculateTokenLength(messageLog);
       if (usedTokens + messageTokens <= maxTokens) {
         chatLog = `${messageLog}${chatLog}`;
         usedTokens += messageTokens;
       } else {
+        console.warn(
+          `libertai-js::LlamaCppApiEngine::preparePrompt -- message truncated due to token limit`
+        );
         break;
       }
     }
