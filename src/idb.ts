@@ -1,7 +1,5 @@
 import localforage from 'localforage';
 
-/* TODO: Add LocalForage typings */
-
 export function createStore(name: string): LocalForage {
   return localforage.createInstance({ name });
 }

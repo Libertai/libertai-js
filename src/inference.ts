@@ -75,17 +75,12 @@ export class LlamaCppApiEngine {
 
       compoundedResult = results[0].trimEnd();
 
-      let to_yield = compoundedResult;
-
       if (results.length > 1 || lastResult.length < maxPredict) {
         stopped = true;
       } else {
         stopped = false;
-        if (tries < maxTries) {
-          to_yield += ' *[writing ...]*';
-        }
       }
-      yield { content: to_yield, stopped };
+      yield { content: compoundedResult, stopped };
     }
   }
 
@@ -164,7 +159,7 @@ export class LlamaCppApiEngine {
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i];
       const timestamp_string = message.timestamp
-        ? ` (at ${message.timestamp.toISOString})`
+        ? ` (at ${message.timestamp.toString()})`
         : '';
       let messageLog = '';
       messageLog += `${promptFormat.userPrepend}${message.role.toLowerCase()}${timestamp_string}${promptFormat.lineSeparator}`;

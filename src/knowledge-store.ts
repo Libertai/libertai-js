@@ -16,7 +16,14 @@ export class KnowledgeStore {
   documents: Map<string, Document>;
   store: LocalForage;
 
-  constructor(config?: KnowledgeStoreConfig) {
+  /**
+   * @constructor
+   * @param config The configuration for the knowledge store. If not provided, the default configuration will be used
+   * @param config.storeName The name of the localforage store
+   * @param config.embeddingApiUrl The URL of the embedding API
+   * @param config.documentsKey The key to use for storing documents in localforage
+   */
+  constructor(config?: Partial<KnowledgeStoreConfig>) {
     // Initialize the configuration
     this.config = { ...defaultKnowledgeStoreConfig, ...config };
 
@@ -29,9 +36,12 @@ export class KnowledgeStore {
     this.load = this.load.bind(this);
     this.addDocument = this.addDocument.bind(this);
     this.searchDocuments = this.searchDocuments.bind(this);
-    this.save = this.save.bind(this);
   }
 
+  /**
+   * Load the documents from localforage
+   * @returns A map of document IDs to documents and stores it in the documents field
+   * */
   async load(): Promise<Map<string, Document>> {
     // Load the documents from localforage
     const item = await idb.get<Map<string, Document>>(
@@ -45,6 +55,13 @@ export class KnowledgeStore {
     return this.documents;
   }
 
+  /**
+   * Add a document to the store
+   * @param title The title of the document
+   * @param content The content of the document
+   * @param tags The tags to associate with the document
+   * @returns The document that was added
+   */
   async addDocument(
     title: string,
     content: string,
@@ -99,8 +116,9 @@ export class KnowledgeStore {
       // If we have tags, make sure the embedding has one of them
       const doc = this.documents.get(embedding.documentId);
       if (!doc) {
-        console.error(
-          `Embedding ${embedding.id} has no corresponding document`
+        console.warn(
+          "libertai-js::KnowledgeStore::searchDocuments - Couldn't find document for embedding: embdding_id = %s",
+          embedding.id
         );
         return;
       }
@@ -124,9 +142,6 @@ export class KnowledgeStore {
       // If the distance is greater than the max_distance, skip it
       if (euclidean_distance > max_distance) return;
 
-      console.log(
-        `Found document ${doc.title} with distance ${euclidean_distance}`
-      );
       matches.push({
         content: embedding.content,
         vector: embedding.vector,
@@ -139,7 +154,7 @@ export class KnowledgeStore {
 
   /* State utils */
 
-  async save(): Promise<void> {
+  private async save(): Promise<void> {
     // Save the documents to localforage
     await idb.put(this.config.documentsKey, this.documents, this.store);
   }
