@@ -5,20 +5,27 @@ import {
   Embedding,
   SearchResult,
   KnowledgeStoreConfig,
-} from './types';
-import { defaultKnowledgeStoreConfig } from './config';
-import idb from './idb';
-import { chunkText, embed, createDocument, createEmbedding } from './utils';
+} from './types.js';
+import { defaultKnowledgeStoreConfig } from './config.js';
+import idb from './idb.js';
+import { chunkText, embed, createDocument, createEmbedding } from './utils.js';
 
 export class KnowledgeStore {
-  config: KnowledgeStoreConfig = defaultKnowledgeStoreConfig;
+  config: KnowledgeStoreConfig;
 
   documents: Map<string, Document>;
   store: LocalForage;
 
-  constructor() {
+  /**
+   * @constructor
+   * @param config The configuration for the knowledge store. If not provided, the default configuration will be used
+   * @param config.storeName The name of the localforage store
+   * @param config.embeddingApiUrl The URL of the embedding API
+   * @param config.documentsKey The key to use for storing documents in localforage
+   */
+  constructor(config?: Partial<KnowledgeStoreConfig>) {
     // Initialize the configuration
-    this.config = defaultKnowledgeStoreConfig;
+    this.config = { ...defaultKnowledgeStoreConfig, ...config };
 
     // Initialize an Array to keep track of our documents
     this.documents = new Map<string, Document>();
@@ -29,9 +36,12 @@ export class KnowledgeStore {
     this.load = this.load.bind(this);
     this.addDocument = this.addDocument.bind(this);
     this.searchDocuments = this.searchDocuments.bind(this);
-    this.save = this.save.bind(this);
   }
 
+  /**
+   * Load the documents from localforage
+   * @returns A map of document IDs to documents and stores it in the documents field
+   * */
   async load(): Promise<Map<string, Document>> {
     // Load the documents from localforage
     const item = await idb.get<Map<string, Document>>(
@@ -45,8 +55,14 @@ export class KnowledgeStore {
     return this.documents;
   }
 
+  /**
+   * Add a document to the store
+   * @param title The title of the document
+   * @param content The content of the document
+   * @param tags The tags to associate with the document
+   * @returns The document that was added
+   */
   async addDocument(
-    this: KnowledgeStore,
     title: string,
     content: string,
     tags = []
@@ -55,8 +71,7 @@ export class KnowledgeStore {
     const doc = createDocument(title, tags);
     // Split the document into chunks (which are just Lanhchain documents)
     const chunks = await chunkText(title, content);
-    // TODO: There's probably a better way to background
-    //  these embeddings, but for now we'll just do it in series
+    // Embed each chunk and save the embeddings to localforage
     const promises = [];
     for (const chunk of chunks) {
       promises.push(this.embedChunk(doc.id, chunk));
@@ -69,12 +84,12 @@ export class KnowledgeStore {
   }
 
   /**
-   * Search the documents in the store for the given query
+   * Search the documents in the store for the given query for similarity by euclidean distance
    * @param query The query to search for
    * @param callback A callback to be called with each result
    * @param k The number of results to return
    * @param max_distance The maximum distance between the query and a result
-   * @param tags The tags to filter by
+   * @param tags The tags to filter by. If empty, no filtering is done
    * @returns A list of the k closest matches
    */
   async searchDocuments(
@@ -101,13 +116,14 @@ export class KnowledgeStore {
       // If we have tags, make sure the embedding has one of them
       const doc = this.documents.get(embedding.documentId);
       if (!doc) {
-        console.error(
-          `Embedding ${embedding.id} has no corresponding document`
+        console.warn(
+          "libertai-js::KnowledgeStore::searchDocuments - Couldn't find document for embedding: embdding_id = %s",
+          embedding.id
         );
         return;
       }
 
-      // Filter by tags
+      // Filter by tags (if any are provided)
       if (tags.length !== 0) {
         for (const tag of tags) {
           if (doc.tags.includes(tag)) {
@@ -126,9 +142,6 @@ export class KnowledgeStore {
       // If the distance is greater than the max_distance, skip it
       if (euclidean_distance > max_distance) return;
 
-      console.log(
-        `Found document ${doc.title} with distance ${euclidean_distance}`
-      );
       matches.push({
         content: embedding.content,
         vector: embedding.vector,
@@ -141,7 +154,7 @@ export class KnowledgeStore {
 
   /* State utils */
 
-  async save(): Promise<void> {
+  private async save(): Promise<void> {
     // Save the documents to localforage
     await idb.put(this.config.documentsKey, this.documents, this.store);
   }

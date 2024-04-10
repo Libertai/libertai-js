@@ -5,11 +5,8 @@ export const DEFAULT_KNOWLEDGE_STORE_NAME = 'knowledge-store';
 export const DEFAULT_KNOWLEDGE_STORE_DOCUMENTS_KEY =
   'knowledge-store-documents';
 
-export const DEFAULT_CHATS_STORE_NAME = 'chats-store';
-
 export default {
   DEFAULT_EMBEDDING_API_URL,
   DEFAULT_KNOWLEDGE_STORE_NAME,
   DEFAULT_KNOWLEDGE_STORE_DOCUMENTS_KEY,
-  DEFAULT_CHATS_STORE_NAME,
 };

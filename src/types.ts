@@ -31,43 +31,19 @@ export interface SearchResult {
 
 /* Chat Interface types */
 
-// TODO: this might be better placed at a higher level, but for now it's here
-export interface Chat {
-  // Chat id
-  id: string;
-  // Chat name
-  title: string;
-  // Chat particpant's User Name
-  username: string;
-  // The model in use for the chat
-  model: Model;
-  // The persona in use for the chat
-  persona: Persona;
-  // Ordered list of chat messages
-  messages: Message[];
-}
-
 export interface Message {
-  // Ordered message id
-  id: number;
-  // Date and time the message was sent
-  timestamp: Date;
   // The user sending the message
   role: string;
   // Message content
   content: string;
-}
-
-export interface PartialChat {
-  id: string;
-  title: string;
-  model: Model;
+  // Date and time the message was sent
+  timestamp?: Date;
 }
 
 /* Inference types */
 
-// Basic ChatMl format
-export interface ChatMl {
+// Basic PromptFormat format
+export interface PromptFormat {
   // Prefix to user input or model output
   userPrepend: string;
   // Suffix to user input or model output
@@ -82,8 +58,10 @@ export interface ChatMl {
   additionalStopSequences: string[];
 }
 
+// TODO: Tighter compliance with tavern-ai persona formatting OR a more opinionated
+// and extensible persona format of our own
+//  https://github.com/TavernAI/TavernAI/tree/main
 export interface Persona {
-  id: number;
   // avatarUrl
   avatarUrl: string;
 
@@ -92,9 +70,6 @@ export interface Persona {
 
   // Persona description
   description: string;
-
-  // TODO: optioanlly set context embeddings
-  // TODO: configure functions
 }
 
 // Common model definition across different engine types
@@ -123,7 +98,7 @@ export interface Model {
   minP: number;
 
   /* Prompt formatting */
-  chatMl: ChatMl;
+  promptFormat: PromptFormat;
 }
 
 /* Store Configuration types */
@@ -135,9 +110,4 @@ export type KnowledgeStoreConfig = {
   storeName: string;
   // Special key that identifies docuements metadata in the store
   documentsKey: string;
-};
-
-export type ChatsStoreConfig = {
-  // Name of the local store to use
-  storeName: string;
 };
