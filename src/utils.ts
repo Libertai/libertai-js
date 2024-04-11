@@ -43,14 +43,31 @@ export async function chunkText(
 
 export async function embed(
   content: string,
-  apiUrl: string
+  apiUrl: string,
+  tries: number = 3
 ): Promise<number[]> {
+  let backoff = 1000;
   // Actually do the completion, calling the engine API
   const params = {
     content: content,
   };
 
-  const response = await axios.post(apiUrl, params);
+  let response = null;
+  const errors = [];
+  for (let i = 0; i < tries; i++) {
+    try {
+      response = await axios.post(apiUrl, params);
+      break;
+    } catch (error) {
+      errors.push(error);
+      console.error(`Error embedding text: ${error}`);
+      await new Promise((resolve) => setTimeout(resolve, backoff));
+      backoff *= 2;
+    }
+  }
+  if (response === null) {
+    throw Error('failed to generate embedding: ' + errors);
+  }
 
   return response.data.embedding;
 }

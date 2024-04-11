@@ -52,7 +52,7 @@ export class KnowledgeStore {
     if (item) {
       this.documents = item;
     }
-
+    await this.prune();
     return this.documents;
   }
 
@@ -73,11 +73,24 @@ export class KnowledgeStore {
     // Split the document into chunks (which are just Lanhchain documents)
     const chunks = await chunkText(title, content);
     // Embed each chunk and save the embeddings to localforage
-    const promises = [];
-    for (const chunk of chunks) {
-      promises.push(this.embedChunk(doc.id, chunk));
+    const batch_size = 10;
+    let batch = [];
+    try {
+      for (const chunk of chunks) {
+        batch.push(chunk);
+        if (batch.length === batch_size) {
+          await Promise.all(batch.map((c) => this.embedChunk(doc.id, c)));
+          batch = [];
+        }
+      }
+    } catch (e) {
+      console.error(
+        'libertai-js::KnowledgeStore::addDocument - Error embedding chunk: %s',
+        e
+      );
+      await this.prune();
+      throw Error('Error embedding batch: ' + e);
     }
-    await Promise.all(promises);
     // Add the document to our list of documents
     this.documents.set(doc.id, doc);
     await this.save();
@@ -108,6 +121,23 @@ export class KnowledgeStore {
     this.documents.delete(documentId);
     await this.save();
     return doc;
+  }
+
+  /**
+   * Prune the store by removing embeddings that are not associated with a document
+   * @returns The number of embeddings that were removed
+   */
+  async prune(): Promise<number> {
+    let count = 0;
+    await this.store.iterate((obj, id, _iterationNumber) => {
+      if (id === this.config.documentsKey) return;
+      const embedding = obj as Embedding;
+      if (!this.documents.has(embedding.documentId)) {
+        this.store.removeItem(id);
+        count += 1;
+      }
+    });
+    return count;
   }
 
   /**
