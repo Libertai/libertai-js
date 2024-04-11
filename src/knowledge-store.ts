@@ -35,6 +35,7 @@ export class KnowledgeStore {
 
     this.load = this.load.bind(this);
     this.addDocument = this.addDocument.bind(this);
+    this.removeDocument = this.removeDocument.bind(this);
     this.searchDocuments = this.searchDocuments.bind(this);
   }
 
@@ -79,6 +80,32 @@ export class KnowledgeStore {
     await Promise.all(promises);
     // Add the document to our list of documents
     this.documents.set(doc.id, doc);
+    await this.save();
+    return doc;
+  }
+
+  /**
+   * Remove a document from the store
+   * @param documentIdd The ID of the document to remove
+   * @returns The document that was removed
+   * @throws An error if the document is not found
+   */
+  async removeDocument(documentId: string): Promise<Document> {
+    const doc = this.documents.get(documentId);
+    if (!doc) {
+      throw new Error(`Document not found: documentId = ${documentId}`);
+    }
+    // Remove all embeddings for the document
+    await this.store.iterate((obj, id, _iterationNumber) => {
+      if (id === this.config.documentsKey) return;
+      const embedding = obj as Embedding;
+      if (embedding.documentId === documentId) {
+        this.store.removeItem(id);
+      }
+    });
+
+    // Remove
+    this.documents.delete(documentId);
     await this.save();
     return doc;
   }
