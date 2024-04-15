@@ -52,7 +52,6 @@ export class KnowledgeStore {
     if (item) {
       this.documents = item;
     }
-    await this.prune();
     return this.documents;
   }
 
@@ -72,6 +71,7 @@ export class KnowledgeStore {
     const doc = createDocument(title, tags);
     // Split the document into chunks (which are just Lanhchain documents)
     const chunks = await chunkText(title, content);
+
     // Embed each chunk and save the embeddings to localforage
     const batch_size = 10;
     let batch = [];
@@ -91,6 +91,12 @@ export class KnowledgeStore {
       await this.prune();
       throw Error('Error embedding batch: ' + e);
     }
+
+    // Embed the last batch
+    if (batch.length > 0) {
+      await Promise.all(batch.map((c) => this.embedChunk(doc.id, c)));
+    }
+
     // Add the document to our list of documents
     this.documents.set(doc.id, doc);
     await this.save();
