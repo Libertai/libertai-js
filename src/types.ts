@@ -50,7 +50,8 @@ export interface PromptFormat {
   userAppend: string;
   // Character to separate messages
   lineSeparator: string;
-
+  // Token to denote the start of any additional logs
+  logStart: string;
   // Default stop sequence for the model. This will be used to
   //  generate prompts for the model
   stopSequence: string;

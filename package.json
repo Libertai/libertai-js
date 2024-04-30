@@ -1,6 +1,6 @@
 {
   "name": "@libertai/libertai-js",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "In-browser SDK for interacting with LibertAI Decentralized AI Network",
   "keywords": [],
   "type": "module",
