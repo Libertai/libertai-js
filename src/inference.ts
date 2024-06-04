@@ -175,11 +175,8 @@ export class LlamaCppApiEngine {
     let chatLog = `${promptFormat.userPrepend}${persona.name.toLowerCase()}${promptFormat.userAppend}`;
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i];
-      const timestamp_string = message.timestamp
-        ? ` (at ${message.timestamp.toString()})`
-        : '';
       let messageLog = '';
-      messageLog += `${promptFormat.userPrepend}${message.role.toLowerCase()}${timestamp_string}${promptFormat.userAppend}`;
+      messageLog += `${promptFormat.userPrepend}${message.role.toLowerCase()}${promptFormat.userAppend}`;
       messageLog += `${message.content}`;
       messageLog += `${promptFormat.stopSequence}`;
       messageLog += `${promptFormat.lineSeparator}`;
