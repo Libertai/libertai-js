@@ -1,6 +1,6 @@
 {
   "name": "@libertai/libertai-js",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "In-browser SDK for interacting with LibertAI Decentralized AI Network",
   "keywords": [],
   "type": "module",
@@ -49,22 +49,22 @@
     "prepare": "yarn build"
   },
   "devDependencies": {
-    "@types/node": "^20.12.2",
-    "@typescript-eslint/eslint-plugin": "^7.4.0",
-    "@typescript-eslint/parser": "^7.4.0",
-    "esbuild": "^0.20.2",
+    "@types/node": "^20.14.9",
+    "@typescript-eslint/eslint-plugin": "^7.15.0",
+    "@typescript-eslint/parser": "^7.15.0",
+    "esbuild": "^0.23.0",
     "eslint": "^8.57.0",
-    "prettier": "^3.0.0",
-    "rimraf": "^5.0.5",
-    "ts-node": "^10.2.1",
-    "typescript": "^5.4.3"
+    "prettier": "^3.3.2",
+    "rimraf": "^5.0.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
   },
   "dependencies": {
-    "axios": "^1.6.8",
-    "langchain": "^0.1.30",
+    "axios": "^1.7.2",
+    "langchain": "^0.1.37",
     "localforage": "^1.10.0",
     "ml-distance": "^4.0.1",
-    "uuid": "^9.0.1"
+    "uuid": "^10.0.0"
   },
   "resolutions": {
     "@langchain/core": "^0.1"

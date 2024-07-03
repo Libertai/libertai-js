@@ -14,7 +14,7 @@ export function calculateTokenLength(input: string): number {
 /* Embedding utility functions */
 
 /*
- * Split a single Text Document into mutliple Documents of a given size
+ * Split a single Text Document into multiple Documents of a given size
  */
 export async function chunkText(
   title: string,
