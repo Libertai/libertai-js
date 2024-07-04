@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { Persona, Model, Message } from './types.js';
+import { Message, Model, Persona } from './types.js';
 import { calculateTokenLength } from './utils.js';
 
 // Simple wrapper class around basic AI inference
@@ -69,9 +69,9 @@ export class LlamaCppApiEngine {
       }
 
       let fullResults = compoundedResult + lastResult;
-      for (let i = 0; i < stop_sequences.length; i++) {
-        fullResults = fullResults.split(`\n${stop_sequences[i]}`).join('|||||');
-        fullResults = fullResults.split(`${stop_sequences[i]}`).join('|||||');
+      for (const element of stop_sequences) {
+        fullResults = fullResults.split(`\n${element}`).join('|||||');
+        fullResults = fullResults.split(`${element}`).join('|||||');
       }
       const results = fullResults.split('|||||');
 
@@ -152,11 +152,11 @@ export class LlamaCppApiEngine {
       targetUser = messages[messages.length - 1].role;
     }
 
-    // Set {{char}} based on persona.name
+    // Set {{char}} based on persona.role
     // Set {{user}} based on targetUser
     // Set {{model}} based on model.name
     let description = persona.description;
-    description = description.replace(/\{\{char\}\}/g, persona.name);
+    description = description.replace(/\{\{char\}\}/g, persona.role);
     description = description.replace(/\{\{user\}\}/g, targetUser);
     description = description.replace(/\{\{model\}\}/g, model.name);
 
@@ -170,9 +170,9 @@ export class LlamaCppApiEngine {
     // Determine how many tokens we have left
     usedTokens = calculateTokenLength(systemPrompt);
 
-    // Iterate over messagse in reverse order
+    // Iterate over messages in reverse order
     // to generate the chat log
-    let chatLog = `${promptFormat.userPrepend}${persona.name.toLowerCase()}${promptFormat.userAppend}`;
+    let chatLog = `${promptFormat.userPrepend}${persona.role.toLowerCase()}${promptFormat.userAppend}`;
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i];
       let messageLog = '';

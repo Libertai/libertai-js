@@ -63,8 +63,8 @@ export interface PromptFormat {
 // and extensible persona format of our own
 //  https://github.com/TavernAI/TavernAI/tree/main
 export interface Persona {
-  // Persona name
-  name: string;
+  // Persona role
+  role: string;
 
   // Persona description
   description: string;
