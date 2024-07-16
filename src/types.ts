@@ -100,6 +100,8 @@ export interface Model {
 
   /* Prompt formatting */
   promptFormat: PromptFormat;
+
+  withCredentials: boolean;
 }
 
 /* Store Configuration types */

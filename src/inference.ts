@@ -124,7 +124,7 @@ export class LlamaCppApiEngine {
 
     // Make the request
     const response = await axios.post(model.apiUrl, params, {
-      withCredentials: true,
+      withCredentials: model.withCredentials,
     });
     const data = response.data;
 
