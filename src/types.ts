@@ -2,11 +2,11 @@
 
 // Document metadata
 export interface Document {
-  // Documents should have a uniqueid
+  // Documents should have a unique id
   id: string;
   // Title of the document
   title: string;
-  // Tags for the document. Can be used to place docments in a collection.
+  // Tags for the document. Can be used to place documents in a collection.
   tags: string[];
 }
 
@@ -16,7 +16,7 @@ export interface Embedding {
   id: string;
   // Embeddings refer back to the document they are from
   documentId: string;
-  // The actual emebedding content
+  // The actual embedding content
   content: string;
   // The embedding vector (float[768])
   vector: number[];
@@ -63,18 +63,15 @@ export interface PromptFormat {
 // and extensible persona format of our own
 //  https://github.com/TavernAI/TavernAI/tree/main
 export interface Persona {
-  // avatarUrl
-  avatarUrl: string;
-
-  // Persona name
-  name: string;
+  // Persona role
+  role: string;
 
   // Persona description
   description: string;
 }
 
 // Common model definition across different engine types
-// Defines resource, paramterization, persona, and prompt formatting
+// Defines resource, parameterization, persona, and prompt formatting
 // for the model
 export interface Model {
   /* Resource definition */
@@ -111,6 +108,6 @@ export type KnowledgeStoreConfig = {
   embeddingApiUrl: string;
   // Name of the local store to use
   storeName: string;
-  // Special key that identifies docuements metadata in the store
+  // Special key that identifies documents metadata in the store
   documentsKey: string;
 };

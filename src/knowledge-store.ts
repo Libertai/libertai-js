@@ -3,12 +3,12 @@ import { distance } from 'ml-distance';
 import {
   Document,
   Embedding,
-  SearchResult,
   KnowledgeStoreConfig,
+  SearchResult,
 } from './types.js';
 import { defaultKnowledgeStoreConfig } from './config.js';
 import idb from './idb.js';
-import { chunkText, embed, createDocument, createEmbedding } from './utils.js';
+import { chunkText, createDocument, createEmbedding, embed } from './utils.js';
 
 export class KnowledgeStore {
   config: KnowledgeStoreConfig;
@@ -65,7 +65,7 @@ export class KnowledgeStore {
   async addDocument(
     title: string,
     content: string,
-    tags = []
+    tags: string[] = []
   ): Promise<Document> {
     // Create a new document object
     const doc = createDocument(title, tags);
@@ -105,7 +105,7 @@ export class KnowledgeStore {
 
   /**
    * Remove a document from the store
-   * @param documentIdd The ID of the document to remove
+   * @param documentId The ID of the document to remove
    * @returns The document that was removed
    * @throws An error if the document is not found
    */
@@ -149,7 +149,6 @@ export class KnowledgeStore {
   /**
    * Search the documents in the store for the given query for similarity by euclidean distance
    * @param query The query to search for
-   * @param callback A callback to be called with each result
    * @param k The number of results to return
    * @param max_distance The maximum distance between the query and a result
    * @param tags The tags to filter by. If empty, no filtering is done
@@ -159,7 +158,7 @@ export class KnowledgeStore {
     query: string,
     k = 5,
     max_distance = 15,
-    tags = []
+    tags: string[] = []
   ): Promise<SearchResult[]> {
     const query_vector = await embed(query, this.config.embeddingApiUrl);
     let matches: SearchResult[] | null = null;
