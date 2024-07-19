@@ -32,7 +32,7 @@ export interface SearchResult {
 /* Chat Interface types */
 
 export interface Message {
-  // The user sending the message
+  // The name of the user sending the message
   role: string;
   // Message content
   content: string;
