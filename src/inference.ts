@@ -143,7 +143,6 @@ export class LlamaCppApiEngine {
     // Allow caller to specify a target user, if different from Message[-1].role
     targetUser: string | null = null
   ): string {
-    let usedTokens = 0;
     const maxTokens = model.maxTokens;
     const promptFormat = model.promptFormat;
 
@@ -168,13 +167,12 @@ export class LlamaCppApiEngine {
     systemPrompt += `${promptFormat.lineSeparator}`;
 
     // Determine how many tokens we have left
-    usedTokens = calculateTokenLength(systemPrompt);
+    let usedTokens = calculateTokenLength(systemPrompt);
 
     // Iterate over messages in reverse order
     // to generate the chat log
     let chatLog = `${promptFormat.userPrepend}${persona.role.toLowerCase()}${promptFormat.userAppend}`;
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const message = messages[i];
+    for (const message of messages.reverse()) {
       let messageLog = '';
       messageLog += `${promptFormat.userPrepend}${message.role.toLowerCase()}${promptFormat.userAppend}`;
       messageLog += `${message.content}`;
