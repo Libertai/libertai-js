@@ -28,7 +28,7 @@ export async function chunkText(
     separators: ['\n\n---\n\n', '\n\n', '\n', ' '],
   });
 
-  // Split into a list of langchain documents
+  // Split into a list of LangChain documents
   const documents = await splitter.createDocuments(
     [content],
     // TODO: include metadata

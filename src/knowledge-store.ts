@@ -32,11 +32,6 @@ export class KnowledgeStore {
 
     // Initialize the localforage store
     this.store = idb.createStore(this.config.storeName);
-
-    this.load = this.load.bind(this);
-    this.addDocument = this.addDocument.bind(this);
-    this.removeDocument = this.removeDocument.bind(this);
-    this.searchDocuments = this.searchDocuments.bind(this);
   }
 
   /**
@@ -69,7 +64,7 @@ export class KnowledgeStore {
   ): Promise<Document> {
     // Create a new document object
     const doc = createDocument(title, tags);
-    // Split the document into chunks (which are just Lanhchain documents)
+    // Split the document into chunks (which are just LangChain documents)
     const chunks = await chunkText(title, content);
 
     // Embed each chunk and save the embeddings to localforage
@@ -85,11 +80,10 @@ export class KnowledgeStore {
       }
     } catch (e) {
       console.error(
-        'libertai-js::KnowledgeStore::addDocument - Error embedding chunk: %s',
-        e
+        `libertai-js::KnowledgeStore::addDocument - Error embedding chunk: ${e}`
       );
       await this.prune();
-      throw Error('Error embedding batch: ' + e);
+      throw Error(`Error embedding batch: ${e}`);
     }
 
     // Embed the last batch
@@ -115,9 +109,8 @@ export class KnowledgeStore {
       throw new Error(`Document not found: documentId = ${documentId}`);
     }
     // Remove all embeddings for the document
-    await this.store.iterate((obj, id, _iterationNumber) => {
+    await this.store.iterate((embedding: Embedding, id) => {
       if (id === this.config.documentsKey) return;
-      const embedding = obj as Embedding;
       if (embedding.documentId === documentId) {
         this.store.removeItem(id);
       }
@@ -135,9 +128,8 @@ export class KnowledgeStore {
    */
   async prune(): Promise<number> {
     let count = 0;
-    await this.store.iterate((obj, id, _iterationNumber) => {
+    await this.store.iterate((embedding: Embedding, id) => {
       if (id === this.config.documentsKey) return;
-      const embedding = obj as Embedding;
       if (!this.documents.has(embedding.documentId)) {
         this.store.removeItem(id);
         count += 1;
@@ -147,7 +139,7 @@ export class KnowledgeStore {
   }
 
   /**
-   * Search the documents in the store for the given query for similarity by euclidean distance
+   * Search the documents in the store for the given query for similarity by Euclidean distance
    * @param query The query to search for
    * @param k The number of results to return
    * @param max_distance The maximum distance between the query and a result
@@ -161,11 +153,10 @@ export class KnowledgeStore {
     tags: string[] = []
   ): Promise<SearchResult[]> {
     const query_vector = await embed(query, this.config.embeddingApiUrl);
-    let matches: SearchResult[] | null = null;
-    matches = [];
+    const matches: SearchResult[] = [];
     let n = 0;
     // Iterate over all embeddings
-    await this.store.iterate((obj, id, _iterationNumber) => {
+    await this.store.iterate((embedding: Embedding, id) => {
       if (n >= k) {
         return;
       }
@@ -173,14 +164,12 @@ export class KnowledgeStore {
       // Skip the documents key
       if (id === this.config.documentsKey) return;
       // Check if this is a valid embedding
-      const embedding = obj as Embedding;
 
       // If we have tags, make sure the embedding has one of them
       const doc = this.documents.get(embedding.documentId);
       if (!doc) {
         console.warn(
-          "libertai-js::KnowledgeStore::searchDocuments - Couldn't find document for embedding: embdding_id = %s",
-          embedding.id
+          `libertai-js::KnowledgeStore::searchDocuments - Couldn't find document for embedding: embedding_id = ${embedding.id}`
         );
         return;
       }
@@ -195,7 +184,7 @@ export class KnowledgeStore {
         }
       }
 
-      // Get the euclidean distance between the query and the embedding
+      // Get the Euclidean distance between the query and the embedding
       const euclidean_distance = distance.euclidean(
         query_vector,
         embedding.vector
