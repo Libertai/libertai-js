@@ -36,8 +36,6 @@ export interface Message {
   role: string;
   // Message content
   content: string;
-  // Date and time the message was sent
-  timestamp?: Date;
 }
 
 /* Inference types */
