@@ -1,34 +1,3 @@
-/* Knowledge types */
-
-// Document metadata
-export interface Document {
-  // Documents should have a unique id
-  id: string;
-  // Title of the document
-  title: string;
-  // Tags for the document. Can be used to place documents in a collection.
-  tags: string[];
-}
-
-// Embeddings data we store
-export interface Embedding {
-  // Embeddings have a unique id
-  id: string;
-  // Embeddings refer back to the document they are from
-  documentId: string;
-  // The actual embedding content
-  content: string;
-  // The embedding vector (float[768])
-  vector: number[];
-}
-
-// Knowledge search result
-export interface SearchResult {
-  content: string;
-  vector: number[];
-  distance: number;
-}
-
 /* Chat Interface types */
 
 export interface Message {
@@ -98,14 +67,3 @@ export interface Model {
 
   withCredentials: boolean;
 }
-
-/* Store Configuration types */
-
-export type KnowledgeStoreConfig = {
-  // Embedding API endpoint to use
-  embeddingApiUrl: string;
-  // Name of the local store to use
-  storeName: string;
-  // Special key that identifies documents metadata in the store
-  documentsKey: string;
-};
