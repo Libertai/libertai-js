@@ -24,6 +24,7 @@ export class LlamaCppApiEngine {
    * @param {Message[]} messages - The sequence of messages to generate an answer for
    * @param {Model} model - The model to use for inference
    * @param {Persona} persona - The persona to use for inference
+   * @param {string[]} knowledgeSearchResults - Knowledge bases content to help the model answer correctly
    * @param {string} targetUser - The user to generate the answer for, if different from Message[-1].role
    * @param {boolean} debug - Whether to print debug information
    */
@@ -31,6 +32,7 @@ export class LlamaCppApiEngine {
     messages: Message[],
     model: Model,
     persona: Persona,
+    knowledgeSearchResults: string[] = [],
     targetUser: string | null = null,
     debug: boolean = false
   ): AsyncGenerator<{ content: string; stopped: boolean }> {
@@ -41,7 +43,13 @@ export class LlamaCppApiEngine {
     );
 
     // Prepare the prompt
-    const prompt = this.preparePrompt(messages, model, persona, targetUser);
+    const prompt = this.preparePrompt(
+      messages,
+      model,
+      persona,
+      targetUser,
+      knowledgeSearchResults
+    );
 
     if (debug) {
       console.log(
@@ -141,7 +149,8 @@ export class LlamaCppApiEngine {
     model: Model,
     persona: Persona,
     // Allow caller to specify a target user, if different from Message[-1].role
-    targetUser: string | null = null
+    targetUser: string | null = null,
+    knowledgeSearchResults: string[]
   ): string {
     const maxTokens = model.maxTokens;
     const promptFormat = model.promptFormat;
@@ -160,7 +169,10 @@ export class LlamaCppApiEngine {
     description = description.replace(/\{\{model\}\}/g, model.name);
 
     // Prepare our system prompt
-    let systemPrompt = '';
+    let systemPrompt =
+      knowledgeSearchResults.length > 0
+        ? `You have access to the following information to help you: ${knowledgeSearchResults.join(promptFormat.lineSeparator)}`
+        : '';
     systemPrompt += `${promptFormat.userPrepend}system${promptFormat.userAppend}`;
     systemPrompt += `${description}`;
     systemPrompt += `${promptFormat.stopSequence}${promptFormat.logStart}`;
