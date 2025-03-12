@@ -5,6 +5,7 @@ export interface Message {
   role: string;
   // Message content
   content: string;
+  thought?: string;
 }
 
 /* Inference types */

@@ -35,7 +35,7 @@ export class LlamaCppApiEngine {
     knowledgeSearchResults: string[] = [],
     targetUser: string | null = null,
     debug: boolean = false
-  ): AsyncGenerator<{ content: string; stopped: boolean }> {
+  ): AsyncGenerator<{ content: string; stopped: boolean; thought: string }> {
     const maxTries = model.maxTries;
     const maxPredict = model.maxPredict;
     const stop_sequences = model.promptFormat.additionalStopSequences.concat(
@@ -84,13 +84,22 @@ export class LlamaCppApiEngine {
       const results = fullResults.split('|||||');
 
       compoundedResult = results[0].trimEnd();
+      const thought = this.extractThought(fullResults);
 
-      if (results.length > 1 || lastResult.length < maxPredict) {
+      if (
+        thought.length == 0 &&
+        (results.length > 1 || lastResult.length < maxPredict)
+      ) {
         stopped = true;
       } else {
         stopped = false;
       }
-      yield { content: compoundedResult, stopped };
+
+      yield {
+        content: this.extractContent(compoundedResult),
+        stopped,
+        thought,
+      };
     }
   }
 
@@ -206,5 +215,32 @@ export class LlamaCppApiEngine {
     // Generate the prompt
     const prompt = `${systemPrompt}${chatLog}`;
     return prompt;
+  }
+
+  extractContent(data: string): string {
+    if (data.indexOf('<think>') != -1 && data.indexOf('</think>') != -1) {
+      const stopPos = data.indexOf('</think>');
+
+      return data.substring(stopPos + '</think>'.length);
+    } else if (data.indexOf('<think>') != -1) {
+      return '';
+    }
+
+    return '' + data;
+  }
+
+  extractThought(data: string): string {
+    if (data.indexOf('<think>') != -1 && data.indexOf('</think>') != -1) {
+      const startPos = data.indexOf('<think>') + '<think>'.length;
+      const stopPos = data.indexOf('</think>');
+
+      return data.substring(startPos, stopPos);
+    } else if (data.indexOf('<think>') != -1) {
+      const startPos = data.indexOf('<think>') + '<think>'.length;
+
+      return data.substring(startPos);
+    }
+
+    return '';
   }
 }
